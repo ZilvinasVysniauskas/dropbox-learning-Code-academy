@@ -93,6 +93,7 @@ class loginController
                     $uniqUserId = str_replace('.', '-', uniqid('', true));
 
                     $data = ['username' => $_POST['email'], 'password' => password_hash($_POST['password'], PASSWORD_DEFAULT), 'userId' => $uniqUserId];
+                    mkdir(__DIR__ . $uniqUserId, );
                     $this->usersTable->insertIntoDb($data);
                     $this->authentication->logUser($_POST['email'], $this->usersTable->findById($_POST['email'])[0]['password'], $uniqUserId);
                     $actual_link = 'http://'.$_SERVER['HTTP_HOST'];
