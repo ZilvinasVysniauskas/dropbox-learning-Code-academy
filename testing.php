@@ -1,8 +1,6 @@
 <?php
-$load = 'root-1';
-$load = strrev($load);
-while (strrev($load) !== 'root-1'){
-    $index = strpos($load, '-');
-    $load = substr($load, $index + 1, strlen($load) - 1);
-    $select[] = strrev($load);
-}
+
+
+rename('public/uploads/61fe358b2d2357-62014427/61fe8aee0530e0-43547580.jpg',
+    'public/uploads/61fe358b2d2357-62014427/asd.folder/61fe8aee0530e0-43547580.jpg');
+

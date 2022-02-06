@@ -1,6 +1,10 @@
 <!doctype html>
+<?php $sessionId = (isset($_SESSION['id']))?$_SESSION['id']:'';?>
 <html lang="en">
 <head>
+    <script type="text/javascript">
+        var globalSessionId = '<?=$sessionId?>';
+    </script>
     <!-- Required meta tags -->
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">

@@ -7,43 +7,84 @@ use Common\DatabaseTable;
 class photoController
 {
     private $userImgTable;
-    private $foldersTable;
+    public $foldersNext = [];
+    public $foldersPrev = [];
+    public $imageData = [];
+    public $foldersAll = [];
+    public $foldersAllPath = [];
 
-    public function __construct(DatabaseTable $userImgTable, DatabaseTable $foldersTable)
+    public function __construct(DatabaseTable $userImgTable)
     {
         $this->userImgTable = $userImgTable;
-        $this->foldersTable = $foldersTable;
-
     }
-
-    public function loadImageDataToDb ($postFile){
-        $columns = ['id','imgSize', 'imgName'];
+    //TODO USED
+    public function loadImageDataToDb ($postFile, $location){
+        $columns = ['id','imgSize', 'imgName', 'userId'];
         $data = [];
         foreach ($postFile['files']['name'] as $key => $value){
-            $id = str_replace('.', '-', uniqid('', true));
-            $data[] = [$id, $postFile['files']['size'][$key],
-                $postFile['files']['name'][$key]];
+            $idName = str_replace('.', '-', uniqid('', true)) . '.jpg';
+            $data[] = [$idName, $postFile['files']['size'][$key],
+                $postFile['files']['name'][$key], $_SESSION['id']];
             imagejpeg(imagecreatefromstring(file_get_contents($postFile['files']['tmp_name']
-            [$key])), 'uploads/' . $id . '.jpg');
+            [$key])), $location . $idName);
         }
         $this->userImgTable->insertMultipleValues($columns, $data);
     }
 
-    public function addFolderIntoDb($postInfo){
-        $data = [
-            'id' => $postInfo['folderLocation'],
-            'folderName' => $postInfo['folderName']
-        ];
-        $this->foldersTable->insertIntoDb($data);
+    public function addFolder($folderName, $location){
+        mkdir($location . $folderName . '.folder');
     }
 
-    public function imageDataFromDbToJson($post = 'null'){
-        if ($post === 'null'){
-            $result = $this->userImgTable->selectDataFromDb(['folderId' => 'root-1']);
+    private function findAllFolders($dir){
+        $innerFolderList = [];
+        $children = scandir($dir);
+        foreach ($children as $part){
+            if (substr($part, -6, 7) === 'folder'){
+                $innerFolderList[] = $dir . '/' . $part;
+            }
         }
-        else{
-            $result = $this->userImgTable->selectDataFromDb(['folderId' => $post]);
+        if (!empty($innerFolderList)){
+            $this->foldersAll = array_merge($this->foldersAll, $innerFolderList);
+            foreach ($innerFolderList as $folder){
+                $this->findAllFolders($folder);
+            }
         }
+    }
+    private function getSizeOfAllImages(){
+        $condition = ['userId' => $_SESSION['id']];
+        $columns = ['SUM(imgSize) as total'];
+        return $this->userImgTable->selectDataFromDb($condition, $columns)[0]['total'];
+
+    }
+
+    public function imageDataFromDbToJson($currentLocation){
+        $filesInFolder = scandir($currentLocation, 1);
+        unset($filesInFolder[array_search('.', $filesInFolder, true)]);
+        unset($filesInFolder[array_search('..', $filesInFolder, true)]);
+        $rootLocation = 'uploads/' . $_SESSION['id'] . '/';
+        $this->findAllFolders($rootLocation);
+        $afterRoot = str_replace($rootLocation, '', $currentLocation);
+        $list = explode('/',$afterRoot);
+        array_pop($list);
+        while ($currentLocation !== $rootLocation){
+            array_pop($list);
+            $currentLocation = $rootLocation;
+            foreach ($list as $folder){
+                $currentLocation .=  $folder . '/';
+            }
+            $this->foldersPrev[] = $currentLocation;
+        }
+        $this->foldersPrev = array_reverse($this->foldersPrev);
+        //TODO ar gerai taip atskirinėti folderius?
+        foreach ($filesInFolder as $key => $part){
+            if (substr($part, -6, 7) === 'folder'){
+                $this->foldersNext[] = $part;
+            }
+            else {
+                $this->imageData[] = $part;
+            }
+        }
+        $result = $this->userImgTable->selectDataFromDbCustom('inArray', $this->imageData, 'id');
         $data = [];
         foreach ($result as $key => $value){
             $data[] = [
@@ -53,35 +94,14 @@ class photoController
                 'uploadDate' => $value['date']
             ];
         }
-        echo json_encode($data);
+        $jsonObject = [];
+        $jsonObject['foldersNext'] = $this->foldersNext;
+        $jsonObject['foldersPrev'] = $this->foldersPrev;
+        $jsonObject['foldersAll'] = $this->foldersAll;
+        $jsonObject['arrayData'] = $data;
+        $jsonObject['allImagesSize'] = $this->getSizeOfAllImages();
+        echo json_encode($jsonObject);
     }
-    public function folderDataFromDbToJson($load = null, $action = null){
-        if ($action === 'updateFoldersNext'){
-            $select = ' id like "'. $load .'-%"  and id not like "'.$load.'-%-%"';
-            $result = $this->foldersTable->selectDataFromDbCustom('custom', $select);
-        }
-        else if ($action === 'updateFoldersPrev') {
-            $select = [];
-            $load = strrev($load);
-            while (strrev($load) !== 'root-1'){
-                $index = strpos($load, '-');
-                $load = substr($load, $index + 1, strlen($load) - 1);
-                $select[] = strrev($load);
-            }
-            $result = $this->foldersTable->selectDataFromDbCustom('inArray', $select, 'id');
-        }
-        else {
-            $result = $this->foldersTable->selectDataFromDb();
-        }
-        $data = [];
-        foreach ($result as $key => $value){
-            $data[] = [
-                'id' => $value['id'],
-                'folderName' => $value['folderName'],
-                'date' => $value['date']
-            ];
-        }
-        echo json_encode($data);
-    }
+
 
 }

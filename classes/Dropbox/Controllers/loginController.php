@@ -9,7 +9,6 @@ require __DIR__ . '/../../../vendor/autoload.php';
 
 class loginController
 {
-
     private $usersTable;
     private $authentication;
     public function __construct(Authentication $authentication, $usersTable)
@@ -49,11 +48,10 @@ class loginController
                     $this->usersTable->updateValuesInDb($data, 'update');
                 }
                 $user = $this->usersTable->findById($_POST['email'])[0];
-                $this->authentication->logUser($user['username'], $user['password'], $user['id']);
+                $this->authentication->logUser($user['username'], $user['password'], $user['userId']);
                 header("Refresh:0");
             }
         }
-
         return ['title' => 'login',
             'templates' => ['login' => ['template' => 'login.html.php', 'variables' => ['errors' => $errors]]]];
     }
@@ -91,9 +89,8 @@ class loginController
                 }
                 else{
                     $uniqUserId = str_replace('.', '-', uniqid('', true));
-
                     $data = ['username' => $_POST['email'], 'password' => password_hash($_POST['password'], PASSWORD_DEFAULT), 'userId' => $uniqUserId];
-                    mkdir(__DIR__ . $uniqUserId, );
+                    mkdir('uploads/' . $uniqUserId);
                     $this->usersTable->insertIntoDb($data);
                     $this->authentication->logUser($_POST['email'], $this->usersTable->findById($_POST['email'])[0]['password'], $uniqUserId);
                     $actual_link = 'http://'.$_SERVER['HTTP_HOST'];

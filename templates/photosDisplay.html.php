@@ -48,7 +48,8 @@
 
     </div>
 
-    <div class="photoDiv row" id="pathDiv"></div>
+    <div class="photoDiv" id="pathDiv">
+    </div>
 
     <div class="photoDiv row" id="folderDiv"></div>
 

@@ -182,6 +182,21 @@ table, th, td {
   transform: translate(-50%, -50%);
   display: none;
 }
+#pathDiv{
+  p{
+    font-size: 20px;
+    display: inline !important;
+    &:after{
+      content: ' > ';
+    }
+  }
+}
+
+#allMemoryDisplay{
+  width: 100%;
+  height: 5px;
+  background-color: gray;
+}
 
 @media (max-width: 768px){
   .section1{

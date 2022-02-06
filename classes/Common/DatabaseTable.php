@@ -82,8 +82,19 @@ class DatabaseTable
     }
 
 
-    public function selectDataFromDb($condition = null, $orderBy = null, $ascOrDesc = null){
-        $sql = 'SELECT * FROM ' . $this->table;
+    public function selectDataFromDb($condition = null, $columns = null, $orderBy = null, $ascOrDesc = null){
+        if ($columns === null){
+            $sql = 'SELECT * FROM ' . $this->table;
+        }
+        else{
+            $sql = 'SELECT ';
+            foreach ($columns as $column){
+                $sql .= $column . ', ';
+            }
+            $sql = rtrim($sql, ', ');
+            $sql .= ' FROM ' . $this->table;
+        }
+
         if ($condition !== null) {
             $sql .= ' WHERE ';
             foreach ($condition as $key => $value) {

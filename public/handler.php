@@ -1,38 +1,27 @@
 <?php
-
-
 include __DIR__ . '/../includes/autoload.php';
 include __DIR__ . '/../includes/DatabaseConnection.php';
-
+session_start();
 
 $imgTable = new \Common\DatabaseTable($pdo, 'userImages', 'id');
-$foldersTable = new \Common\DatabaseTable($pdo, 'folders', 'id');
-$photoController = new \Dropbox\Controllers\PhotoController($imgTable, $foldersTable);
-
+$photoController = new \Dropbox\Controllers\PhotoController($imgTable);
 
 
 if (!empty($_POST['arrToDelete'])){
     $imgTable->deleteFromDbMultiple($_POST['arrToDelete']);
     foreach ($_POST['arrToDelete'] as $photoId){
-        unlink('uploads/' . $photoId . '.jpg');
+        echo $photoId;
+        unlink($_POST['currentLocation'] . $photoId);
     }
 }
 if (!empty($_FILES['files']['name'])){
-    $photoController->loadImageDataToDb($_FILES);
+    $photoController->loadImageDataToDb($_FILES, $_POST['location']);
 }
 if (!empty($_POST['folderName'])){
-    $photoController->addFolderIntoDb($_POST);
+    $photoController->addFolder($_POST['folderName'], $_POST['folderLocation']);
 }
 if (!empty($_POST['placeInFolder'])){
     foreach ($_POST['placeInFolder'] as $img){
-        $data = [
-            'set' => [
-                'folderId' => $_POST['folder'],
-            ],
-            'conditions' => [
-                'id' => $img
-            ]
-        ];
-        $imgTable->updateValuesInDb($data);
+        rename($_POST['currentLocation'] . '/' . $img, $_POST['folder'] . '/' . $img);
     }
 }

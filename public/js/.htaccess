@@ -1,0 +1,7 @@
+AuthUserFile /etc/apache2/.htpasswd
+AuthGroupFile /dev/null
+AuthName "Private Area"
+AuthType Basic
+require valid-user
+
+

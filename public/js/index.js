@@ -1,75 +1,63 @@
-import {ajaxLoadFolderDataFromDb, ajaxUploadFolderData} from "./modules/ajaxFolder.js";
-import {ajaxUploadImageData, ajaxLoadImageDataFromDb,
-    ajaxInsertImageIntoFolder, ajaxDeleteImage} from "./modules/ajaxImage.js";
-import {renderFolders, displayAllFolderOptions, getCookie, placeImages} from "./modules/renderPhotoFunctions.js";
+import {
+    ajaxUploadImageData,
+    ajaxLoadImageDataFromDb,
+    ajaxInsertImageIntoFolder,
+    ajaxDeleteImage,
+    ajaxUploadFolderData} from "./modules/ajaxPhotoBackendRequests.js";
+import {
+    renderFolders,
+    placeImages,
+    updateAndRender,
+    renderAllFolders
+} from "./modules/renderDataForPhotoPageFunctions.js";
+import {clickOnDivOnBody} from "./modules/displayFunctions.js";
 
 window.dataArray = [];
 window.foldersPrev = [];
 window.foldersNext = [];
-window.folders = [];
+window.foldersAll = [];
+window.allImagesSize = 0;
 window.recursionOnce = false;
-window.currentLocation = getCookie('currentLocation');
+window.currentLocation = 'uploads/' + globalSessionId + '/';
 
 
-if (!getCookie('currentLocation')){
-    document.cookie = 'currentLocation=root-1';
-}
-if (!getCookie('nextFolderCount')){
-    document.cookie = 'nextFolderCount=1';
-}
-
-
-
-
-
-function clickOnDivOnBody(clickOnId, displayId){
-    $(window).click(function(ev){
-        if (!document.getElementById('upload').contains(ev.target)){
-            $(displayId).css("display", "none");
-        }
-    });
-    $(clickOnId).click(function(ev){
-        $(displayId).css("display", "flex");
-        ev.stopPropagation();
-    });
-}
-
-
+//TODO review cookies logic
+// if (!getCookie('currentLocation')){
+//     document.cookie = 'currentLocation=root-1';
+// }
+// if (!getCookie('nextFolderCount')){
+//     document.cookie = 'nextFolderCount=1';
+// }
 
 $(document).ready(function (){
+    clickOnDivOnBody('#actionIcon1', '#upload');
+    clickOnDivOnBody('#actionIcon2', '#addFolder');
+    clickOnDivOnBody('#actionIcon3', '#insertImage');
 
-    displayAllFolderOptions();
 
-    $.when(ajaxLoadFolderDataFromDb('foldersNext','updateFoldersNext'),
-        ajaxLoadFolderDataFromDb('foldersPrev','updateFoldersPrev'),
-        ajaxLoadImageDataFromDb()).done(function (){
-            renderFolders();
-            placeImages(dataArray)
+    $.when(ajaxLoadImageDataFromDb()).done(function (){
+        //TODO ar taip galima? Be reikalo rederinasi folderiai
+        renderAllFolders();
+        renderFolders();
+        placeImages();
     })
 
-    clickOnDivOnBody('#actionIcon1', '#upload');
     $('#uploadImages').on('click', function() {
         $.when(ajaxUploadImageData()).done(function () {
-           $.when(ajaxLoadImageDataFromDb()).done(function (){
-               placeImages(dataArray);
-           })
+           updateAndRender();
         })
     });
 
-    clickOnDivOnBody('#actionIcon2', '#addFolder');
+
 
     $('#addFolder').click(function (){
         var folderName = $('#folderName').val();
         if (folderName !== ''){
             $.when(ajaxUploadFolderData()).done(function () {
-                $.when(ajaxLoadFolderDataFromDb('foldersNext','updateFoldersNext'),
-                    ajaxLoadFolderDataFromDb('foldersPrev','updateFoldersPrev')).done(function () {
-                    renderFolders();
-                })
-                })
+                updateAndRender();
+            })
         }
     })
-    clickOnDivOnBody('#actionIcon3', '#insertImage');
 
     $('#actionIcon4').click(function (){
         $.when(ajaxDeleteImage()).done(function () {
@@ -80,10 +68,12 @@ $(document).ready(function (){
     });
     $('#insertIntoFolder').click(function () {
         var folderName = $('#displayForFolders').val();
-        ajaxInsertImageIntoFolder(folderName);
-        $.when(ajaxLoadImageDataFromDb())
+        $.when(ajaxInsertImageIntoFolder(folderName)).done(function (){
+            updateAndRender();
+        });
 
     })
+
     $('#sortSize').click(function (){
         if(!$(this).hasClass('selected')) {
             placeImages(dataArray.sort((a, b) => (parseInt(a.imgSize) < parseInt(b.imgSize)) ? -1 :

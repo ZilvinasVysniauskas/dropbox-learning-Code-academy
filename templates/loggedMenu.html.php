@@ -29,7 +29,10 @@
             <a href="getstarted"><h3>get started</h3></a>
         </div>
     </div>
-
+    <h4 class="mt-5"><span id="scoreNumber"></span> / 100mb</h4>
+    <div id="allMemoryDisplay">
+        <div id="insideScore"></div>
+    </div>
 </div>
 
 
